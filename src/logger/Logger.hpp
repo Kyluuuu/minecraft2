@@ -16,7 +16,7 @@ public:
         ERROR
     };
 
-    static void init(const std::string &filepath);
+    static void init();
 
     static void debug(std::string_view message);
     static void info(std::string_view message);
@@ -28,4 +28,6 @@ private:
     static std::mutex s_mutex;
 
     static void log(Level level, std::string_view message);
+    static std::string getTimeString(const char *levelName, std::string_view &message);
+    static std::string getTimeString();
 };

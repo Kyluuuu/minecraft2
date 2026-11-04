@@ -15,7 +15,11 @@ private:
 
     ~mcWindow()
     {
-        delete window;
+        if (window != nullptr)
+        {
+            glfwDestroyWindow(window);
+            window = nullptr;
+        }
     }
 
 public:

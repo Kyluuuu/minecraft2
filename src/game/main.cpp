@@ -3,8 +3,13 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <format>
-#include "settings/settings.hpp"
+#include "files/files.hpp"
 #include "../logger/Logger.hpp"
+
+// ui includes
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 void error_callback(int code, const char *desc)
 {
@@ -25,15 +30,18 @@ int main()
     return 1;
 #endif
 
-    if (!Files::setUpFiles())
+    try
     {
-        std::cerr << "Failed to initialise files" << std::endl;
-        return 1;
+        Files::initFiles();
+    }
+    catch (const std::runtime_error &e)
+    {
+        std::cerr << "Failed to initialise files: " << e.what() << std::endl;
     }
 
     try
     {
-        Logger::init(std::string(Files::logFolder));
+        Logger::init();
     }
     catch (const std::runtime_error &e)
     {
@@ -52,11 +60,38 @@ int main()
     }
     Logger::info("Initialised glfw");
 
+    // setup imgui ui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(glfwCreateWindow(720, 1020, "game", nullptr, nullptr), true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplOpenGL3_Init();
+
+    while (true)
+    {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        _sleep(3000);
+    }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwTerminate();
     Logger::info("Terminated glfw");
     return 0;
 }
 
-// main enters
+// main flow
+// main funciton is entered
+// load
 // settings are from the UI, but cant be started without the window but
 // changes made in the ui need to restart the window

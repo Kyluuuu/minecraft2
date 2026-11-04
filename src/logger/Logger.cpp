@@ -1,24 +1,24 @@
 #include "Logger.hpp"
 #include <iostream>
 #include <filesystem>
+#include <fstream>
 #include <chrono>
 #include <iomanip>
 #include <ctime>
 
 std::ofstream Logger::s_file;
 std::mutex Logger::s_mutex;
+const std::filesystem::path logPath{"logs"};
 
-void Logger::init(const std::string &filepath)
+void Logger::init()
 {
-    
     std::lock_guard<std::mutex> lock(s_mutex);
 
-    std::filesystem::path path(filepath);
+    std::filesystem::create_directories(logPath);
 
-    if (!path.parent_path().empty())
-        std::filesystem::create_directories(path.parent_path());
+    const auto logFile = logPath / (getTimeString() + ".txt");
 
-    s_file.open(filepath, std::ios::out | std::ios::app);
+    s_file.open(logFile, std::ios::out | std::ios::app);
 
     if (!s_file.is_open())
         throw std::runtime_error("Failed to open log file");
@@ -44,16 +44,43 @@ void Logger::error(std::string_view message)
     log(Level::ERROR, message);
 }
 
-void Logger::log(Level level, std::string_view message)
+std::string Logger::getTimeString(const char *levelName, std::string_view &message)
 {
-    std::lock_guard<std::mutex> lock(s_mutex);
-
     const auto now = std::chrono::system_clock::now();
     const std::time_t time = std::chrono::system_clock::to_time_t(now);
 
     std::tm timestamp{};
 
+    // ctime function converting to local time and writes into timestamp
     localtime_s(&timestamp, &time);
+    std::ostringstream output;
+
+    output << std::put_time(&timestamp, "%Y-%m-%d %H:%M:%S")
+           << " [" << levelName << "] "
+           << message;
+
+    return output.str();
+}
+
+std::string Logger::getTimeString()
+{
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t time = std::chrono::system_clock::to_time_t(now);
+
+    std::tm timestamp{};
+
+    // ctime function converting to local time and writes into timestamp
+    localtime_s(&timestamp, &time);
+    std::ostringstream output;
+
+    output << std::put_time(&timestamp, "%Y-%m-%d_%H-%M-%S");
+
+    return output.str();
+}
+
+void Logger::log(Level level, std::string_view message)
+{
+    std::lock_guard<std::mutex> lock(s_mutex);
 
     const char *levelName = "";
 
@@ -73,19 +100,9 @@ void Logger::log(Level level, std::string_view message)
         break;
     }
 
-    std::ostringstream output;
-
-    output << std::put_time(&timestamp, "%Y-%m-%d %H:%M:%S")
-           << " [" << levelName << "] "
-           << message;
-
-    const std::string entry = output.str();
-
-    std::cout << entry << '\n';
-
     if (s_file.is_open())
     {
-        s_file << entry << '\n';
+        s_file << getTimeString(levelName, message) << '\n';
         s_file.flush();
     }
 }
