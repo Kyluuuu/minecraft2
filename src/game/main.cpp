@@ -1,15 +1,16 @@
 // Glad needs to be included first
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <glad/glad.h>  //opengl api
+#include <GLFW/glfw3.h> //window and operating system api
 #include <iostream>
 #include <format>
 #include "files/files.hpp"
 #include "../logger/Logger.hpp"
 
 // ui includes
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
 
 void error_callback(int code, const char *desc)
 {
@@ -23,7 +24,7 @@ void thread_callback()
 {
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 #ifndef _WIN32
     std::cerr << "Not running windows!" << std::endl;
@@ -32,26 +33,20 @@ int main()
 
     try
     {
+        for (int i = 1; i < argc; i++)
+        {
+            std::string arg = argv[i];
+            std::cout << arg << std::endl;
+        }
         Files::initFiles();
-    }
-    catch (const std::runtime_error &e)
-    {
-        std::cerr << "Failed to initialise files: " << e.what() << std::endl;
-    }
-
-    try
-    {
         Logger::init();
     }
     catch (const std::runtime_error &e)
     {
-        std::cerr << std::format("Error starting logger, ERROR: {}", e.what());
+        std::cerr << "Failed to initialise: " << e.what() << std::endl;
         return 1;
     }
     Logger::info("Initialised logger");
-
-    glfwSetErrorCallback(error_callback);
-    Logger::info("Initialised glfw error callback");
 
     if (!glfwInit())
     {
@@ -60,38 +55,51 @@ int main()
     }
     Logger::info("Initialised glfw");
 
-    // setup imgui ui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    int w = 1020;
+    int h = 720;
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(glfwCreateWindow(720, 1020, "game", nullptr, nullptr), true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
-    ImGui_ImplOpenGL3_Init();
+    // sets opengl window version to 3.3
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // want core opengl profile
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwSetErrorCallback(error_callback);
 
-    while (true)
+    GLFWwindow *window = glfwCreateWindow(w, h, "game", nullptr, nullptr);
+    if (!window)
     {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        _sleep(3000);
+        Logger::error("Failed to init window");
+        return 1;
     }
+    Logger::info("Initialised window");
+    glfwMakeContextCurrent(window);
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        Logger::error("Failed to initialise GLAD");
+        return 1;
+    }
+    Logger::info("Initialised GLAD");
+
+    glfwGetFramebufferSize(window, &w, &h); // is called in the callBack but might not have been called yet
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glViewport(0, 0, w, h);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    while (!glfwWindowShouldClose(window))
+    {
+        // get os events like mouse shit
+        glfwPollEvents();
+
+        // clears the previous frame
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // this is the buffer to load the window
+        //  once the frame is loaded then we swap the buffer to the monitor to display it
+        glfwSwapBuffers(window);
+    }
 
     glfwTerminate();
     Logger::info("Terminated glfw");
     return 0;
 }
-
-// main flow
-// main funciton is entered
-// load
-// settings are from the UI, but cant be started without the window but
-// changes made in the ui need to restart the window
