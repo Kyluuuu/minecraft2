@@ -1,27 +1,37 @@
 // Glad needs to be included first
-#include <glad/glad.h>  //opengl api
-#include <GLFW/glfw3.h> //window and operating system api
 #include <iostream>
 #include <format>
+
 #include "files/files.hpp"
 #include "../logger/Logger.hpp"
 
-// ui includes
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
+#include <RmlUi/Core.h>
+#include "RmlUi_Backend.h"
 
-void error_callback(int code, const char *desc)
-{
-    Logger::error(std::format(
-        "ERROR: {}, with error code {}",
-        desc ? desc : "unknown",
-        code));
-}
+#define WINDOWNAME "window"
 
-void thread_callback()
+enum shutdownLevel
 {
+    BACKEND,
+    RML,
+    CONTEXT
+};
+
+uint8_t shutdown(shutdownLevel level)
+{
+    switch (level)
+    {
+    case shutdownLevel::CONTEXT:
+        Rml::RemoveContext(WINDOWNAME);
+        [[fallthrough]];
+    case shutdownLevel::RML:
+        Rml::Shutdown();
+        [[fallthrough]];
+    case shutdownLevel::BACKEND:
+        Backend::Shutdown();
+    }
+    Logger::info("Shut down application");
+    return 1;
 }
 
 int main(int argc, char *argv[])
@@ -48,58 +58,59 @@ int main(int argc, char *argv[])
     }
     Logger::info("Initialised logger");
 
-    if (!glfwInit())
+    // TODO load from settings file
+    constexpr int width = 1020;
+    constexpr int height = 720;
+
+    // handles window and opengl
+    if (!Backend::Initialize("minecraft", width, height, true))
     {
-        Logger::error("Failed to init glfw");
+        Logger::error("Failed to initialise RmlUi backend");
         return 1;
     }
-    Logger::info("Initialised glfw");
+    Logger::info("Initialised RmlUi Backend");
 
-    int w = 1020;
-    int h = 720;
+    // Connect RmlUi to the backend's system and rendering interfaces.
+    Rml::SetSystemInterface(Backend::GetSystemInterface());
+    Rml::SetRenderInterface(Backend::GetRenderInterface());
 
-    // sets opengl window version to 3.3
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // want core opengl profile
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwSetErrorCallback(error_callback);
-
-    GLFWwindow *window = glfwCreateWindow(w, h, "game", nullptr, nullptr);
-    if (!window)
+    if (!Rml::Initialise())
     {
-        Logger::error("Failed to init window");
+        Logger::error("Failed to initialise RmlUi");
+        return shutdown(shutdownLevel::BACKEND);
         return 1;
     }
-    Logger::info("Initialised window");
-    glfwMakeContextCurrent(window);
+    Logger::info("Initialised RmlUi");
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    // Create the UI context.
+    Rml::Context *context = Rml::CreateContext(
+        "main",
+        Rml::Vector2i(width, height));
+
+    if (!context)
     {
-        Logger::error("Failed to initialise GLAD");
+        Logger::error("Failed to create RmlUi context");
+        return shutdown(shutdownLevel::RML);
+    }
+    Logger::info("Created RmlUi context");
+
+    Rml::ElementDocument *crosshair = context->LoadDocument("../assets/ui/hud.rml");
+    if (!crosshair)
+    {
+        Logger::error("Failed to create crosshair");
         return 1;
     }
-    Logger::info("Initialised GLAD");
+    crosshair->Show();
 
-    glfwGetFramebufferSize(window, &w, &h); // is called in the callBack but might not have been called yet
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glViewport(0, 0, w, h);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-    while (!glfwWindowShouldClose(window))
+    // Main application loop.
+    while (Backend::ProcessEvents(context))
     {
-        // get os events like mouse shit
-        glfwPollEvents();
-
-        // clears the previous frame
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // this is the buffer to load the window
-        //  once the frame is loaded then we swap the buffer to the monitor to display it
-        glfwSwapBuffers(window);
+        context->Update();
+        Backend::BeginFrame();
+        context->Render();
+        Backend::PresentFrame();
     }
 
-    glfwTerminate();
-    Logger::info("Terminated glfw");
+    shutdown(shutdownLevel::CONTEXT);
     return 0;
 }

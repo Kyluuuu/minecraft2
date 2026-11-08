@@ -1,0 +1,13 @@
+<rml>
+    <head>
+        <title>hud</title>
+        <link type="text/rcss" href="hud.rcss">
+    </head>
+
+    <body>
+        <div id="crosshair">
+            <div class="vCrosshair"></div>
+            <div class="hCrosshair"></div>
+        </div>    
+    </body>
+</rml>

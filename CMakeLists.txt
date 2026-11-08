@@ -12,17 +12,20 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(RmlUi CONFIG REQUIRED)
 
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-    src/*.cpp
-)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 add_executable(minecraft
     ${SOURCES}
-    external/glad/src/glad.c
+
+    # RmlUi GLFW/OpenGL backend
+    external/RmlUi/Backends/RmlUi_Backend_GLFW_GL3.cpp
+    external/RmlUi/Backends/RmlUi_Platform_GLFW.cpp
+    external/RmlUi/Backends/RmlUi_Renderer_GL3.cpp
 )
 
 target_include_directories(minecraft PRIVATE
     external/glad/include
+    external/RmlUi/Backends
 )
 
 target_link_libraries(minecraft PRIVATE
