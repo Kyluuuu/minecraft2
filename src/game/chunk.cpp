@@ -4,41 +4,29 @@
 #include "block.cpp"
 #include "FastNoiseLite.h"
 #include <algorithm>
+#include "consts.hpp"
+#include "chunk.hpp"
 
-constexpr uint8_t CHUNK_SIZE = 16;
-constexpr int VOLUME = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-constexpr uint8_t WORLD_H = 255;
-constexpr uint8_t SEA_LEVEL = 62;
-
-class Chunk
+//constructer
+Chunk::Chunk(uint32_t x, uint32_t y, uint32_t z) : x{x}, y{y}, z{z}
 {
-    uint32_t x, y, z;
 
-    std::vector<Block> palette;
-    std::vector<uint16_t> blockCount;
-    std::vector<uint64_t> blockBitData;
+}
 
-    uint8_t bits{0};
+void Chunk::generateChunk()
+{
 
-    bool dirty = false;
+}
 
-    // Mesh mesh;
+void Chunk::generateMesh() {
+    
+}
 
-    Chunk()
-    {
-    }
-
-    void generateChunk()
-    {
-    }
-
-private:
     // void regenBlockBitData()
     // {
     //     std::vector<uint64_t> blockBitTemp;
     //     for (int i = 0; i <)
     //     // blockBitTemp.push_back();
     // }
-};
 
 // everytime a block is added have to check if in palette already?
