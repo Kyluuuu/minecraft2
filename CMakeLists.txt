@@ -26,6 +26,7 @@ add_executable(minecraft
 target_include_directories(minecraft PRIVATE
     external/glad/include
     external/RmlUi/Backends
+    external/FastNoiseLite
 )
 
 target_link_libraries(minecraft PRIVATE
