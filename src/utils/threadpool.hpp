@@ -12,9 +12,11 @@
 
 class ThreadPool {
     private:
+        std::mutex tp_mutex;
+
+        //All varaibles need to locked to access safely
         std::vector<std::thread> worker_threads;
         std::queue<std::function<void()>> tasks;
-        std::mutex mutex;
         std::condition_variable condition_variable;
         bool stop{false};
 
@@ -30,7 +32,7 @@ class ThreadPool {
                 {
                     std::function<void()> task;
                     {
-                        std::unique_lock<std::mutex> lock(mutex);
+                        std::unique_lock<std::mutex> lock(tp_mutex);
                         condition_variable.wait(lock, [this] { return stop || !tasks.empty(); });
                         if (stop && tasks.empty()) return;
                         task = std::move(tasks.front());
@@ -42,8 +44,15 @@ class ThreadPool {
         }
     }
 
-    ~ThreadPool() {
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
 
+    ~ThreadPool() {
+        {
+            std::lock_guard<std::mutex> lock(tp_mutex);
+            stop = true;
+        }
+        condition_variable.notify_all();
     }
 
     void addTask(void* task, ) {
