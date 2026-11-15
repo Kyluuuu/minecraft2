@@ -5,6 +5,7 @@
 #include "chunk.hpp"
 #include <FastNoiseLite.h>
 #include "consts.hpp"
+#include "../utils/threadpool.hpp"
 
 std::unordered_map<uint16_t, Chunk> worldChunks;
 
@@ -23,6 +24,10 @@ FastNoiseLite trees;
 
 float continentFreq = 0.002f, hillsFreq = 0.010f, cavesFreq = 0.030f, treesFreq = 0.003f;
 int continentOct = 1, hillsOct = 1, cavesOct = 1, treesOct = 1;
+
+int tick_rate = 100; //100 ms tick rate;
+
+ThreadPool threadpool;
 
 // TODO set up files to read seed
 
@@ -52,22 +57,34 @@ void init()
 
 }
 
+/*
+    Generates and updates chunk block data
+        Builds blocks and data
+        Updates blocks and data based on tick rate
+*/
 void generateChunks() {
     //render distance maximum low will be 4 so dont need to worry about going to zero or -1
+    //Get odd render distance, as we will be a chunk so we do diameter is the render distance
     int render_distance_odd = (render_distance % 2 == 0) ? render_distance - 1 : render_distance;
-    int xLeft = posx % CHUNKSIZE - CHUNKSIZE * render_distance_odd / 2;
-    int yLeft = posy % CHUNKSIZE - CHUNKSIZE * render_distance_odd / 2;
+    int xLeft = posx % CHUNKSIZE - ((CHUNKSIZE * render_distance_odd) / 2);
+    int yLeft = posy % CHUNKSIZE - ((CHUNKSIZE * render_distance_odd) / 2);
     for (int xc = 0; xc < render_distance_odd; xc ++) {
         for (int yc = 0; yc < render_distance_odd; yc ++) {
             for (int zc = 0; zc < WORLD_HEIGHT_DIVISIBLE / CHUNKSIZE; zc++)
-            worldChunks.emplace(xLeft, Chunk(xc, yc, zc));
+                if (chunk not exists) {
+                    worldChunks.emplace(xLeft, Chunk(xc, yc, zc));
+                    worldChunks.at(xLeft).generateChunk();
+                    if (tick rate last >= tick_rate) {
+                        
+                    }
+                }
         }
     }
 }
 
 Chunk* getChunkFromPos(int x, int y) {
     x %= CHUNKSIZE;
-    y %+ CHUNKSIZE;
+    y %= CHUNKSIZE;
     return &worldChunks.at(x + y);
 }
 

@@ -2,6 +2,7 @@
   "dependencies": [
     "glfw3",
     "nlohmann-json",
-    "rmlui"
+    "rmlui",
+    "gtest"
   ]
 }
