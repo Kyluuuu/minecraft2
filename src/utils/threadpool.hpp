@@ -10,24 +10,25 @@
 #include <memory>
 #include <type_traits>
 
-class ThreadPool {
-    private:
-        std::mutex tp_mutex;
+class ThreadPool
+{
+private:
+    std::mutex tp_mutex;
 
-        //All varaibles need to locked to access safely
-        std::vector<std::thread> worker_threads;
-        std::queue<std::function<void()>> tasks;
-        std::condition_variable condition_variable;
-        bool stop{false};
+    // All varaibles need to locked to access safely
+    std::vector<std::thread> worker_threads;
+    std::queue<std::function<void()>> tasks;
+    std::condition_variable condition_variable;
+    bool stop{false};
 
-    
-    public:
+public:
+    explicit ThreadPool(int n = std::thread::hardware_concurrency())
+    {
 
-    explicit ThreadPool(int n = std::thread::hardware_concurrency()) {
-
-        for (int i = 0; i < n; i++) 
+        for (int i = 0; i < n; i++)
         {
-            worker_threads.emplace_back([this] {
+            worker_threads.emplace_back([this]
+                                        {
                 while (true) 
                 {
                     std::function<void()> task;
@@ -39,27 +40,53 @@ class ThreadPool {
                         tasks.pop();
                     }
                     task();
-                }
-            });
+                } });
         }
     }
 
-    ThreadPool(const ThreadPool&) = delete;
-    ThreadPool& operator=(const ThreadPool&) = delete;
+    ThreadPool(const ThreadPool &) = delete;
+    ThreadPool &operator=(const ThreadPool &) = delete;
 
-    ~ThreadPool() {
+    ~ThreadPool()
+    {
         {
             std::lock_guard<std::mutex> lock(tp_mutex);
             stop = true;
         }
         condition_variable.notify_all();
+        for (std::thread &worker : worker_threads)
+        {
+            worker.join();
+        }
     }
 
-    void addTask(void* task, ) {
+    template <typename F>
+    auto submit(F &&f) -> std::future<std::invoke_result_t<F>>
+    {
+        using type = std::invoke_result_t<F>;
+        auto task = std::make_shared;
+        std::future<type> result = task->get_future();
+        {
+            std::lock_guard<std::mutex> lock(tp_mutex);
+            tasks.emplace_back([task]
+                               { (*task)(); });
+        }
+        condition_variable.notify_one();
+        return result;
+    }
+
+    void addTask(void *task)
+    {
         condition_variable.notify_one();
     }
-    void joinTasks();
 
+    void joinTasks()
+    {
+        stop = true;
+    }
 
-
+    void stop()
+    {
+        stop = true;
+    }
 };
