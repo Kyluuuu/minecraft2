@@ -60,11 +60,12 @@ public:
         }
     }
 
-    template <typename F>
-    auto submit(F &&f) -> std::future<std::invoke_result_t<F>>
+    template <typename F, typename ...Args>
+    auto submit(F &&f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>>
     {
-        using type = std::invoke_result_t<F>;
-        auto task = std::make_shared;
+        using type = std::invoke_result_t<F, Args...>;
+        std::shared_ptr<type()> = std::make_shared<std::packaged<type()>>(
+            std::bind(std::forward<F>(f), std::forward<Args...>(args)));
         std::future<type> result = task->get_future();
         {
             std::lock_guard<std::mutex> lock(tp_mutex);
