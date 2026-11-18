@@ -7,11 +7,34 @@
 #include "consts.hpp"
 #include "../utils/threadpool.hpp"
 #include "world.hpp"
+#include "files/files.hpp"
 
-World::World(int seed)
+World::World(int seed, Files& fileLoader)
     : world_generator(seed)
 {
+    fileLoader.sub(
+        Settings::RENDER_DISTANCE, [this] (int render_d) {
+            cout << "render distance changed!";
+            render_distance = render_d;
+        }
+    );
+    fileLoader.sub(
+        Settings::CHUNK_SIZE, [this] () {
 
+        }
+    );
+    fileLoader.sub(
+        Settings::TICK_RATE, [this] () {
+
+        }
+    );
+}
+
+void updateRenderDistance() {
+    //removed further distance chunks from world_chunks if smaller
+    //if larger doent have to do anything wth world_chunks?
+    //clear chunk_thread_pool
+    //
 }
 
 

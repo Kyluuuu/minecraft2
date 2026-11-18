@@ -8,6 +8,7 @@
 #include "consts.hpp"
 #include "../utils/threadpool.hpp"
 #include "worldGenerator.hpp"
+#include "game/option.hpp"
 
 class World
 {
@@ -19,6 +20,8 @@ private:
     int chunk_size;
     int tick_rate;
 
+    
+
     WorldGenerator world_generator;
 
     ThreadPool chunk_thread_pool;
@@ -29,9 +32,10 @@ private:
 
 public:
     World(int seed);
-    ~World() { chunk_thread_pool.joinTasks(); }
     World(const World &) = delete;
     World &operator=(const World &) = delete;
 
     void generateChunks();
+
 };
+//

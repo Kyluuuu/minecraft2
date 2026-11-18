@@ -102,9 +102,14 @@ int main(int argc, char *argv[])
     }
     crosshair->Show();
 
+    Files fileLoader;
+    World world(seed, fileLoader);
+
     // Main application loop.
     while (Backend::ProcessEvents(context))
     {
+
+
         context->Update();
         Backend::BeginFrame();
         context->Render();

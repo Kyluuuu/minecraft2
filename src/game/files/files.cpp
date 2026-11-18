@@ -49,6 +49,16 @@ Json Files::getJsonFile(std::filesystem::path &file)
     return Json::parse(fileToRead);
 }
 
+//Hard code variables and types in definition table
+//have case switch that will read each var in json and store as appropriate type
+//store all settings and then watch for updates and update data as it changes
+//when chnages happen, send data to appriopriate places
+// to do this either have pub sub system or hard code the pub sub basically
+// hard code can read from a config file or just a coded config basically
+
+// how does data from fileLoader get to world for example?
+// if new settngs are added that will be touched by world how to add this easily?
+
 // get a value
 // std::string username = settings["username"];
 // get a value with default

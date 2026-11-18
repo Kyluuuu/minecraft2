@@ -13,3 +13,7 @@ public:
 
 private:
 };
+
+
+//What needs file data?
+//if changing settings like 
